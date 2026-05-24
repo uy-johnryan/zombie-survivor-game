@@ -1,0 +1,14 @@
+body,
+html {
+  overflow: hidden; /* Prevent scrolling on the entire page */
+  margin: 0; /* Remove default body margin */
+  padding: 0; /* Remove default body padding */
+  height: 100%; /* Ensure body and html take full viewport height */
+  width: 100%;
+}
+
+  .header{
+    max-width: fit-content  
+    margin: 0 auto;
+    padding: 16px;
+  }

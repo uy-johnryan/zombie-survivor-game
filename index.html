@@ -1,0 +1,104 @@
+<!Doctype HTML>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Zombiesurvivorgame.net</title>
+
+    <link rel="stylesheet" href="css/styles.css" />
+  </head>
+  <body>
+    <!-- GAME TITLE -->
+    <h1 class="game-title">Zombie Survivor</h1>
+
+    <!-- GAME UI -->
+    <div class="game-ui">
+
+        <div class="ui-box">
+            Score: <span id="score">0</span>
+        </div>
+
+        <div class="ui-box">
+            Wave: <span id="wave">1</span>
+        </div>
+
+        <div class="ui-box">
+            Health: <span id="health">100</span>
+        </div>
+
+        <div class="ui-box">
+            Player: <span id="playerNameDisplay">Guest</span>
+        </div>
+
+    </div>
+
+    <!-- GAME CONTAINER -->
+    <div class="game-container">
+
+        <!-- GAME CANVAS -->
+        <canvas id="gameCanvas" width="1000" height="600"></canvas>
+
+    </div>
+
+    <!-- START SCREEN -->
+    <div id="startScreen" class="overlay-screen">
+
+        <h2>Zombie Survivor</h2>
+
+        <p>Survive as many waves as possible!</p>
+
+        <!-- USERNAME INPUT -->
+        <input
+            type="text"
+            id="usernameInput"
+            placeholder="Enter Username"
+            maxlength="15"
+        >
+
+        <button id="startButton">
+            Start Game
+        </button>
+
+    </div>
+
+    <!-- LEADERBOARD -->
+    <div class="leaderboard">
+
+        <h2>Leaderboard</h2>
+
+        <ol id="leaderboardList">
+
+            <li>Player1 - 500</li>
+            <li>Player2 - 420</li>
+            <li>Player3 - 300</li>
+
+        </ol>
+
+    </div>
+
+    <!-- GAME OVER SCREEN -->
+    <div id="gameOverScreen" class="overlay-screen hidden">
+
+        <h2>Game Over</h2>
+
+        <p>
+            Player:
+            <span id="finalPlayerName">Guest</span>
+        </p>
+
+        <p>
+            Final Score:
+            <span id="finalScore">0</span>
+        </p>
+
+        <button id="restartButton">
+            Restart
+        </button>
+
+    </div>
+
+    <!-- JAVASCRIPT FILE -->
+    <script src="script.js"></script>
+
+</body>
+</html>
