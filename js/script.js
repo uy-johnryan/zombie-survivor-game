@@ -110,28 +110,25 @@ function game_whole_interface_design() {
     mask.height = canvas.height;
     let mCtx = mask.getContext('2d');
     
-    mCtx.fillStyle = "rgba(4, 5, 12, 0.88)"; 
+    // 1. Fill the screen with the ambient darkness overlay
+    mCtx.fillStyle = "rgba(4, 5, 12, 0.92)"; 
     mCtx.fillRect(0, 0, canvas.width, canvas.height);
     
+    // 2. Set blend mode to carve out the light
     mCtx.globalCompositeOperation = 'destination-out';
     
-    mCtx.save();
-    mCtx.translate(player.x, player.y);
-    mCtx.rotate(player.angle);
+    // 3. Create a circular radial gradient centered directly on the player
+    // Adjust 180 (inner full light radius) and 250 (outer fade out limit) to change your torch size!
+    let torchGrad = mCtx.createRadialGradient(player.x, player.y, 20, player.x, player.y, 220);
+    torchGrad.addColorStop(0, 'rgba(0, 0, 0, 1)');      // Bright center core
+    torchGrad.addColorStop(0.6, 'rgba(0, 0, 0, 0.8)');  // High visibility area
+    torchGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');      // Soft falloff into darkness
     
-    mCtx.beginPath();
-    mCtx.moveTo(0, 0);
-    mCtx.arc(0, 0, 350, -Math.PI / 6, Math.PI / 6); 
-    mCtx.closePath();
+    mCtx.fillStyle = torchGrad;
+    mCtx.beginPath(); 
+    mCtx.arc(player.x, player.y, 220, 0, Math.PI * 2); 
     mCtx.fill();
     
-    let playerGrad = mCtx.createRadialGradient(0, 0, 10, 0, 0, 50);
-    playerGrad.addColorStop(0, 'black');
-    playerGrad.addColorStop(1, 'transparent');
-    mCtx.fillStyle = playerGrad;
-    mCtx.beginPath(); mCtx.arc(0, 0, 50, 0, Math.PI * 2); mCtx.fill();
-    
-    mCtx.restore();
     ctx.drawImage(mask, 0, 0);
 }
 
