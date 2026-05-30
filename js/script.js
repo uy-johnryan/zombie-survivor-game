@@ -1,3 +1,21 @@
+import {
+    collection,
+    addDoc,
+    query,
+    orderBy,
+    limit,
+    getDocs
+} from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+import { 
+    createUserWithEmailAndPassword, 
+    signInWithEmailAndPassword 
+} from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
+import { auth, db } from "./firebase.js";
+import { load_leaderboard } from "./leaderboard.js";
+
+// Load the leaderboard immediately when the script runs
+load_leaderboard();
+
 const playerImg = new Image(); playerImg.src = 'assets/images/human.jpg'; 
 const zombieImg = new Image(); zombieImg.src = 'assets/images/zombie.jpg';
 const swordSwing = new Audio('assets/sounds/sword-swing.mp3');
@@ -14,10 +32,13 @@ const gameOverScreen = document.getElementById("gameOverScreen");
 const startButton = document.getElementById("startButton");
 const restartButton = document.getElementById("restartButton");
 const usernameInput = document.getElementById("usernameInput");
+const emailInput = document.getElementById("emailInput");
+const passwordInput = document.getElementById("passwordInput");
+const loginButton = document.getElementById("loginButton");
+const registerButton = document.getElementById("registerButton");
 const scoreDisplay = document.getElementById("score");
 const waveDisplay = document.getElementById("wave");
 const healthDisplay = document.getElementById("health");
-const zombieCountDisplay = document.getElementById("zombieCount");
 const waveNotification = document.getElementById("waveNotification");
 const playerNameDisplay = document.getElementById("playerNameDisplay");
 const finalPlayerName = document.getElementById("finalPlayerName");
@@ -43,7 +64,7 @@ const player = { x: 500, y: 300, radius: 16, speed: 4, angle: 0, name: "Survivor
 const keys = { w: false, a: false, s: false, d: false };
 const mouse = { x: 0, y: 0 };
 
-// Gitul-id ang paghimo sa Go Signal Button para sa Wave Break
+// Go Signal Button setup
 let nextWaveButton = document.getElementById("nextWaveButton");
 if (!nextWaveButton) {
     nextWaveButton = document.createElement("button");
@@ -73,9 +94,37 @@ canvas.addEventListener("mousemove", (e) => {
     mouse.y = e.clientY - rect.top;
 });
 canvas.addEventListener("mousedown", () => { if (isPlaying && !isWaveBreak) slash_sword(); });
+
 startButton.addEventListener("click", start_game);
 restartButton.addEventListener("click", start_game);
 nextWaveButton.addEventListener("click", next_wave);
+
+// --- AUTHENTICATION HANDLERS ---
+registerButton.addEventListener("click", async () => {
+    const email = emailInput.value.trim();
+    const password = passwordInput.value;
+    if(!email || !password) return alert("Please enter email and password");
+    try {
+        await createUserWithEmailAndPassword(auth, email, password);
+        alert("Registration Successful! You can now click Start.");
+        startButton.disabled = false;
+    } catch (err) {
+        alert(err.message);
+    }
+});
+
+loginButton.addEventListener("click", async () => {
+    const email = emailInput.value.trim();
+    const password = passwordInput.value;
+    if(!email || !password) return alert("Please enter email and password");
+    try {
+        await signInWithEmailAndPassword(auth, email, password);
+        alert("Logged in successfully!");
+        startButton.disabled = false;
+    } catch (err) {
+        alert(err.message);
+    }
+});
 
 function game_whole_interface_design() {
     ctx.fillStyle = lowhealthredbackground ? "darkred" : "#0c101b";
@@ -110,19 +159,14 @@ function game_whole_interface_design() {
     mask.height = canvas.height;
     let mCtx = mask.getContext('2d');
     
-    // 1. Fill the screen with the ambient darkness overlay
     mCtx.fillStyle = "rgba(4, 5, 12, 0.92)"; 
     mCtx.fillRect(0, 0, canvas.width, canvas.height);
-    
-    // 2. Set blend mode to carve out the light
     mCtx.globalCompositeOperation = 'destination-out';
     
-    // 3. Create a circular radial gradient centered directly on the player
-    // Adjust 180 (inner full light radius) and 250 (outer fade out limit) to change your torch size!
     let torchGrad = mCtx.createRadialGradient(player.x, player.y, 20, player.x, player.y, 220);
-    torchGrad.addColorStop(0, 'rgba(0, 0, 0, 1)');      // Bright center core
-    torchGrad.addColorStop(0.6, 'rgba(0, 0, 0, 0.8)');  // High visibility area
-    torchGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');      // Soft falloff into darkness
+    torchGrad.addColorStop(0, 'rgba(0, 0, 0, 1)');      
+    torchGrad.addColorStop(0.6, 'rgba(0, 0, 0, 0.8)');  
+    torchGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');      
     
     mCtx.fillStyle = torchGrad;
     mCtx.beginPath(); 
@@ -160,16 +204,9 @@ function slash_sword() {
                 score += 50;
                 scoreDisplay.textContent = score;
                 totalZombiesInWave--;
-                update_zombie_count();
             }
         }   
     });
-}
-
-function update_zombie_count() {
-    if (zombieCountDisplay) {
-        zombieCountDisplay.textContent = Math.max(0, totalZombiesInWave);
-    }
 }
 
 function spawn_zombie() {
@@ -187,21 +224,17 @@ function spawn_zombie() {
     zombiesToSpawn--;
 }
 
-// 1. END OF THE WAVE (Mo-pause ug gawas ang Words)
 function start_wave_break() {
-    isWaveBreak = true; // Set true immediately to prevent loop frame spam
+    isWaveBreak = true; 
     if (spawnIntervalId) clearInterval(spawnIntervalId);
     
-    // Words after wave finished
     if (waveNotification) {
         waveNotification.innerHTML = `WAVE ${wave} COMPLETED!<br><span style="color: #ffd633; font-size: 24px;">GET READY FOR THE NEXT WAVE</span>`;
         waveNotification.classList.remove("hidden");
     }
-    
     nextWaveButton.style.display = "block"; 
 }
 
-// 2. START OF THE WAVE (Naay countdown ug text, DILI MO SPAWN DIRITSO)
 function next_wave() {
     isWaveBreak = true; 
     if (spawnIntervalId) clearInterval(spawnIntervalId);
@@ -220,11 +253,9 @@ function next_wave() {
 
     setTimeout(() => {
         if (waveNotification) waveNotification.classList.add("hidden");
-        
         maxZombieLimit += 5;
         zombiesToSpawn = maxZombieLimit;
         totalZombiesInWave = maxZombieLimit;
-        update_zombie_count(); 
         
         isWaveBreak = false; 
         spawnIntervalId = setInterval(spawn_zombie, 1000); 
@@ -264,7 +295,7 @@ function update_engine() {
     gameLoopId = requestAnimationFrame(update_engine);
 }
 
-function end_game() {
+async function end_game() {
     isPlaying = false; 
     if (spawnIntervalId) clearInterval(spawnIntervalId); 
     cancelAnimationFrame(gameLoopId);
@@ -272,6 +303,26 @@ function end_game() {
     finalPlayerName.textContent = player.name; 
     finalScore.textContent = score;
     gameOverScreen.classList.remove("hidden");
+
+    const user = auth.currentUser;
+    if (user) {
+        try {
+            await addDoc(
+                collection(db, "leaderboard"),
+                {
+                    username: player.name,
+                    email: user.email,
+                    score: score,
+                    wave: wave,
+                    timestamp: Date.now()
+                }
+            );
+            // Refresh leaderboard views after submitting high score
+            load_leaderboard();
+        } catch (error) {
+            console.error("Error saving score to leaderboard:", error);
+        }
+    }
 }
 
 function start_game() {
@@ -287,7 +338,6 @@ function start_game() {
     player.x = 500; player.y = 300; player.name = usernameInput.value || "Survivor";
     playerNameDisplay.textContent = player.name; scoreDisplay.textContent = score;
     waveDisplay.textContent = wave; healthDisplay.textContent = health; 
-    update_zombie_count(); 
     
     isPlaying = true; 
     startScreen.classList.add("hidden"); 
@@ -297,4 +347,4 @@ function start_game() {
     
     spawnIntervalId = setInterval(spawn_zombie, 1000); 
     update_engine(); 
-}   
+}
